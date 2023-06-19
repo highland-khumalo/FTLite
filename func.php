@@ -5,7 +5,7 @@ require "datb/datb.php";
 $datb = new datb($config['datb_storage']);
 
 
-$uri = $_SERVER['REQUEST_URI'];
+$uri = str_replace("/", "", $_SERVER['REQUEST_URI']);
 $now = new DateTime();
 $format = "h:i A j M";
 
