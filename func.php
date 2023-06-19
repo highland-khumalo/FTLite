@@ -25,36 +25,6 @@ function redirect($url)
     exit();
 }
 
-// this function is used on pages that need the real user
-function security_check()
-{
-    require "__/get_ip.php";
-    global $datb;
-    if (
-        isset($_COOKIE['remember_token']) and isset($_COOKIE['phone_number']) and
-        $datb->get("users/" . $_COOKIE['phone_number'], "token") == $_COOKIE['remember_token'] and
-        $ip == $datb->get("users/" . $_COOKIE['phone_number'], "ip")
-    ) {
-        return TRUE;
-    } else {
-        if (isset($_COOKIE['remember_token'])) {
-            log_("security_check: false reading on \n\t\tphone no =" . isset($_COOKIE['phone_number']) . "\n\t\tip =" .
-                $ip . " -> " . $datb->get("users/" . $_COOKIE['phone_number'], "ip") . "\n\t\ttokens" .
-                $_COOKIE['remember_token'] . " -> " . $datb->get("users/" . $_COOKIE['phone_number'], "token"));    
-        }
-
-        if (isset($_SERVER['HTTP_COOKIE'])) {
-            $cookies = explode(';', $_SERVER['HTTP_COOKIE']);
-            foreach ($cookies as $cookie) {
-                $parts = explode('=', $cookie);
-                $name = trim($parts[0]);
-                setcookie($name, '', time() - 1000);
-                setcookie($name, '', time() - 1000, '/');
-            }
-        }
-        redirect("/");
-    }
-}
 
 function sanitizeString($string)
 {
@@ -66,18 +36,18 @@ function startsWith($str, $search)
     return substr($str, 0, strlen($search)) == $search;
 }
 
-function formatPhoneNumber($phoneNumber)
-{
-    if (startsWith($phoneNumber, "+27")) {
-        $phoneNumber = preg_replace('/[^0-9]/', '', $phoneNumber);
-        $length = strlen($phoneNumber);
-        if ($length == 10) {
-            return '+27 ' . substr($phoneNumber, 0, 2) . ' ' . substr($phoneNumber, 2, 3) . ' ' . substr($phoneNumber, 5);
-        } else {
-            return $phoneNumber;
-        }
+function generateRandomString($length) {
+    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $string = '';
+
+    for ($i = 0; $i < $length; $i++) {
+        $randomIndex = rand(0, strlen($characters) - 1);
+        $string .= $characters[$randomIndex];
     }
+
+    return $string;
 }
+
 
 function create_database($DATABASE)
 {
@@ -104,16 +74,6 @@ function get_from_database($DATABASE, $var)
         return $value;
     }
     return "";
-}
-
-function add_new_contact($my_phone_number, $input_phone_number)
-{
-    // Save the phone number to a database
-    global $datb;
-    if (!$datb->is("users/" . $my_phone_number . "/contact", $input_phone_number)) {
-        $datb->add("users/" . $my_phone_number, "contacts", $input_phone_number . ",");
-        $datb->put("users/" . $my_phone_number . "/contact", $input_phone_number, $input_phone_number . ",");
-    }
 }
 
 function cache($var, $value)
